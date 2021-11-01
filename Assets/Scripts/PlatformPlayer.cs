@@ -29,14 +29,6 @@ public class PlatformPlayer : MonoBehaviour
         Vector2 movement = new Vector2(deltaX, _rigidBody.velocity.y);
         _rigidBody.velocity = movement;
 
-        _anim.SetFloat("speed", Mathf.Abs(deltaX));
-
-        // reverse X Axle direction
-        if (!Mathf.Approximately(deltaX, 0))
-        {
-            transform.localScale = new Vector3(Mathf.Sign(deltaX), 1, 1);
-        }
-
         Vector3 max = _box.bounds.max;
         Vector3 min = _box.bounds.min;
 
@@ -46,10 +38,34 @@ public class PlatformPlayer : MonoBehaviour
         Collider2D hit = Physics2D.OverlapArea(corner1, corner2);
 
         bool grounded = false;
+        MovingPlatform platform = null;
+        Vector3 pScale = Vector3.one;
+
         if(hit != null)
         {
+            platform = hit.GetComponent<MovingPlatform>();
             grounded = true;
         }
+
+        if (platform != null)
+        {
+            transform.parent = platform.transform;
+            pScale = platform.transform.localScale;
+        }
+        else
+        {
+            transform.parent = null;
+        }
+
+        _anim.SetFloat("speed", Mathf.Abs(deltaX));
+
+        // reverse X Axle direction
+        if (!Mathf.Approximately(deltaX, 0))
+        {
+            transform.localScale = new Vector3(Mathf.Sign(deltaX) / pScale.x, 1 / pScale.y, 1);
+        }
+
+        _rigidBody.gravityScale = grounded && Mathf.Approximately(deltaX, 0) ? 0 : 1;
 
         if (grounded && Input.GetKeyDown(KeyCode.Space))
         {
